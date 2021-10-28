@@ -1,0 +1,72 @@
+#!/bin/bash
+
+if [[ "$BUILDKITE_COMMAND_EXIT_STATUS" -ne 0 ]]; then
+	echo '[!] Build failed, skipping AppCenter upload'
+	exit 0
+fi
+
+BUILDKITE_PLUGIN_APP_CENTER_UPLOAD_API_TOKEN_FROM=${BUILDKITE_PLUGIN_APP_CENTER_UPLOAD_API_TOKEN_FROM:-APP_CENTER_API_TOKEN}
+API_TOKEN=${BUILDKITE_PLUGIN_APP_CENTER_UPLOAD_API_TOKEN-}
+if [[ -z "${API_TOKEN}" ]]; then
+	API_TOKEN=$(eval "echo \$$BUILDKITE_PLUGIN_APP_CENTER_UPLOAD_API_TOKEN_FROM")
+fi
+if [[ -z "${API_TOKEN-}" ]]; then
+	echo '[!] AppCenter API token required'
+	exit 1
+fi
+
+BUILDKITE_PLUGIN_APPCENTER_UPLOAD_APP_ID_FROM=${BUILDKITE_PLUGIN_APPCENTER_UPLOAD_APP_ID_FROM:-HOCKEYAPP_APP_ID}
+APP_ID=${BUILDKITE_PLUGIN_APPCENTER_UPLOAD_APP_ID-}
+if [[ -z "${APP_ID}" ]]; then
+	APP_ID=$(eval "echo \$$BUILDKITE_PLUGIN_APPCENTER_UPLOAD_APP_ID_FROM")
+fi
+if [[ -z "${APP_ID-}" ]]; then
+	echo '[!] AppCenter Application ID required'
+	exit 1
+fi
+
+if [[ -z "${BUILDKITE_PLUGIN_APPCENTER_UPLOAD_PATH_IPA-}" ]]; then
+	echo '[!] .ipa filename required'
+	exit 1
+fi
+
+if [[ -z "${APPCENTER_APP_NAME}" ]]; then
+    echo '[!] App name is required'
+	exit 1
+fi
+
+CURL_DSYM=""
+if [[ ! -z "${BUILDKITE_PLUGIN_APPCENTER_UPLOAD_PATH_DSYM_ZIP-}" ]]; then
+	CURL_DSYM="-F "dsym=@${BUILDKITE_PLUGIN_APPCENTER_UPLOAD_PATH_DSYM_ZIP}""
+fi
+
+CURL_REPOSITORY_URL=""
+if [[ "${BUILDKITE_REPO-}" == git@github.com:* ]]; then
+	CURL_REPOSITORY_URL="-F "repository_url=${BUILDKITE_REPO/#git@github.com:/https://github.com/}""
+elif [[ "${BUILDKITE_REPO-}" == git:* ]]; then
+	CURL_REPOSITORY_URL="-F "repository_url=${BUILDKITE_REPO/#git:/https:}""
+elif [[ "${BUILDKITE_REPO-}" == https:* ]]; then
+	CURL_REPOSITORY_URL="-F "repository_url=${BUILDKITE_REPO}""
+fi
+
+CURL_NOTIFY=""
+if [[ "${BUILDKITE_PLUGIN_APPCENTER_UPLOAD_NOTIFY-false}" == "true" ]]; then
+	CURL_NOTIFY="-F "notify=1""
+fi
+
+echo ${CURL_REPOSITORY_URL}
+echo ${CURL_DSYM}
+echo ${API_TOKEN}
+echo ${BASH_SOURCE%/*}
+echo ${BUILDKITE_PLUGIN_APPCENTER_UPLOAD_PATH_IPA-}
+echo ${APPCENTER_APP_NAME}
+echo ${BUILDKITE_MESSAGE}
+
+python3 "${BASH_SOURCE%/*}/../python/upload-app.py" --appToken ${API_TOKEN} --appName ${APPCENTER_APP_NAME} --appFile ${BUILDKITE_PLUGIN_APPCENTER_UPLOAD_PATH_IPA-} --releaseNotes "${BUILDKITE_MESSAGE}"
+
+if [[ "$?" -ne 0 ]]; then
+    echo '[!] AppCenter upload failed'
+    exit 1
+fi
+
+exit 0
