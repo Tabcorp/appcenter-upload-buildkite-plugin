@@ -1,7 +1,7 @@
 {
   "name": "AppCenter Upload",
   "description": "Upload Android and iOS app builds to AppCenter",
-  "author": "@chaniel",
+  "author": "@paulpr",
   "public": true,
   "requirements": [
   ]
