@@ -1,2 +1,2 @@
 # appcenter-upload-buildkite-plugin
-Android build appcenter upload plugin 
+A Buildkite plugin to upload Android and iOS app builds to AppCenter.
