@@ -49,12 +49,12 @@ class AppCenter:
         self.distribution_group_name = None
         self.distribution_group_id = None
         self.release_id = 0
-        http.client.HTTPConnection.debuglevel = 1
-        logging.basicConfig()
-        logging.getLogger().setLevel(logging.DEBUG)
-        requests_log = logging.getLogger("requests.packages.urllib3")
-        requests_log.setLevel(logging.DEBUG)
-        requests_log.propagate = True
+        # http.client.HTTPConnection.debuglevel = 1
+        # logging.basicConfig()
+        # logging.getLogger().setLevel(logging.DEBUG)
+        # requests_log = logging.getLogger("requests.packages.urllib3")
+        # requests_log.setLevel(logging.DEBUG)
+        # requests_log.propagate = True
 
     def setup_distribution(self, group_name: str = DEFAULT_DISTRIBUTION_GROUP_NAME):
         url = '/'.join([BASE_URL, ORG_URL, ORGANIZATION_NAME, DISTRIBUTION_GROUPS_URL])
@@ -81,19 +81,7 @@ class AppCenter:
         response = requests.post(url, data=params, headers=HEADERS)
         upload_data = json.loads(response.content.decode())
         print('Create upload resource status code:', response.status_code)
-        # Upload
-        # multipart_form_data = {
-        #     UPLOAD_FILE_NAME_KEY: (UPLOAD_FILE_CONTENT, open(filename, 'rb'))
-        # }
         self.set_release_upload_metadata(upload_data, filename)
-        # upload_response = requests.post(upload_data['upload_domain'], files=multipart_form_data)
-        # print('Upload resource status code:', upload_response.status_code)
-        #  Patch
-        # patch_url = '/'.join(
-        #     [BASE_URL, APP_URL, self.owner_name, self.app_name, UPLOAD_URL, upload_data['upload_id']])
-        # payload = "{\"status\": \"committed\"}"
-        # patch_params = requests.patch(patch_url, data=payload, headers=HEADERS)
-        # print('Commit upload status code:', patch_params.status_code)
 
     def set_release_upload_metadata(self, upload_data, filename):
         upload_domain = upload_data['upload_domain']
@@ -171,27 +159,6 @@ class AppCenter:
         payload = "{\"destinations\": [{ \"name\": \"%s\"}], \"notify_testers\": true }" % DEFAULT_DISTRIBUTION_GROUP_NAME
         upload_response = requests.patch(url, data=payload, headers=HEADERS)
         print('release app status ', upload_response.status_code)
-
-    # def release_app(self, release_notes='Release'):
-    #     url = '/'.join([BASE_URL, APP_URL, self.owner_name, self.app_name, 'releases'])
-    #     response = requests.get(url, headers=HEADERS)
-    #     if response.status_code == 200:
-    #         releases = json.loads(response.content.decode())
-    #         self.release_id = max(releases, key=compare_key)['id']
-    #         url = '/'.join([BASE_URL, APP_URL, self.owner_name, self.app_name, 'releases', '%d' % self.release_id])
-    #         response = requests.put(url, json={'release_notes': release_notes}, headers=HEADERS)
-    #         print('Release id=%d app name= %s to %s status_code=%d' %
-    #               (self.release_id, self.app_name, self.distribution_group_name, response.status_code))
-    #         url = '/'.join(
-    #             [BASE_URL, APP_URL, self.owner_name, self.app_name, 'releases', '%d' % self.release_id, 'groups'])
-    #         response = requests.post(url, json={
-    #             'id': self.distribution_group_id,
-    #             'mandatory_update': False,
-    #             'notify_testers': True
-    #         }, headers=HEADERS)
-    #         print('Distributes a release to %s group status code = %d' %
-    #               (self.distribution_group_name, response.status_code))
-
 
 def compare_key(item):
     return item['id']
